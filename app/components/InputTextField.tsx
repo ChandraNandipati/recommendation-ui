@@ -9,6 +9,8 @@ interface InputTextFieldProps {
   fullWidth?: boolean;
   value: string;
   onChange: (event: ChangeEvent<HTMLInputElement>) => void;
+  error?: boolean;
+  helperText?: string;
 }
 
 export default function InputTextField({
@@ -19,6 +21,8 @@ export default function InputTextField({
   fullWidth,
   value,
   onChange,
+  error,
+  helperText,
 }: InputTextFieldProps) {
   return (
     <TextField
@@ -29,6 +33,8 @@ export default function InputTextField({
       fullWidth={fullWidth}
       value={value}
       onChange={onChange}
+      error={error}
+      helperText={helperText}
     />
   );
 }
