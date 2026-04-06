@@ -4,6 +4,8 @@ import { ChangeEvent, FormEvent, useState } from "react";
 import { Alert, Box, Button, Paper, Typography } from "@mui/material";
 import InputTextField from "../components/InputTextField";
 
+const REGISTER_API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/auth/register`;
+
 type FormValues = {
   firstName: string;
   lastName: string;
@@ -98,6 +100,8 @@ export default function RegisterPage() {
   const [formValues, setFormValues] = useState<FormValues>(initialValues);
   const [formErrors, setFormErrors] = useState<FormErrors>(initialErrors);
   const [successMessage, setSuccessMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleNameChange =
     (field: "firstName" | "lastName", label: string) =>
@@ -162,7 +166,7 @@ export default function RegisterPage() {
     }));
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     const nextErrors: FormErrors = {
@@ -177,24 +181,49 @@ export default function RegisterPage() {
 
     if (Object.values(nextErrors).some(Boolean)) {
       setSuccessMessage("");
+      setErrorMessage("");
       return;
     }
 
-    console.log(
-      JSON.stringify(
-        {
+    if (!process.env.NEXT_PUBLIC_API_BASE_URL) {
+      setSuccessMessage("");
+      setErrorMessage("NEXT_PUBLIC_API_BASE_URL is not configured.");
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      setSuccessMessage("");
+      setErrorMessage("");
+
+      const response = await fetch(REGISTER_API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
           firstName: formValues.firstName,
           lastName: formValues.lastName,
           email: formValues.email,
           password: formValues.password,
-          confirmPassword: formValues.confirmPassword,
-        },
-        null,
-        2
-      )
-    );
+        }),
+      });
 
-    setSuccessMessage("Registration form submitted successfully.");
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(data?.message || "Registration failed. Please try again.");
+      }
+
+      setSuccessMessage(data?.message || "Registration completed successfully.");
+      setFormValues(initialValues);
+      setFormErrors(initialErrors);
+    } catch (error) {
+      setSuccessMessage("");
+      setErrorMessage(error instanceof Error ? error.message : "Something went wrong.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -229,6 +258,12 @@ export default function RegisterPage() {
         {successMessage ? (
           <Alert severity="success" sx={{ mb: 2 }}>
             {successMessage}
+          </Alert>
+        ) : null}
+
+        {errorMessage ? (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {errorMessage}
           </Alert>
         ) : null}
 
@@ -296,8 +331,8 @@ export default function RegisterPage() {
             helperText={formErrors.confirmPassword || "Must match the password"}
           />
 
-          <Button type="submit" variant="contained" size="large" fullWidth sx={{ mt: 1 }}>
-            Register
+          <Button type="submit" variant="contained" size="large" fullWidth sx={{ mt: 1 }} disabled={isSubmitting}>
+            {isSubmitting ? "Registering..." : "Register"}
           </Button>
         </Box>
       </Paper>
