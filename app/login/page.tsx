@@ -1,12 +1,19 @@
 "use client";
 
 import { ChangeEvent, FormEvent, useState } from "react";
-import { Box, Button, Paper, Typography } from "@mui/material";
+import { Alert, Box, Button, CircularProgress, Paper, Typography } from "@mui/material";
 import InputTextField from "../components/InputTextField";
+
+
+
+const LOGIN_API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/auth/login`;
+
 
 export default function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [isLogging, setIsLogging] = useState(false);
 
   const handleUsernameChange = (event: ChangeEvent<HTMLInputElement>) => {
     setUsername(event.target.value);
@@ -16,9 +23,37 @@ export default function Login() {
     setPassword(event.target.value);
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async(event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    window.alert(`Username: ${username}\nPassword: ${password}`);
+    console.log(`Username: ${username}\nPassword: ${password}`);
+    try{
+      setIsLogging(true);
+      setErrorMessage("");
+      const response = await fetch(LOGIN_API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "testHeader":"Sneah"
+        },
+        body: JSON.stringify({
+          email: username,
+          password: password
+        }),
+      });
+
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(data?.message || "Login failed. Please try again.");
+      }
+
+      setIsLogging(false);
+
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "Something went wrong.");
+    } finally {
+      setIsLogging(false);
+    }
   };
 
   return (
@@ -49,6 +84,12 @@ export default function Login() {
           Enter your username and password to continue.
         </Typography>
 
+        {errorMessage ? (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {errorMessage}
+          </Alert>
+        ) : null}
+
         <Box component="form" sx={{ display: "grid", gap: 2 }} onSubmit={handleSubmit}>
           <InputTextField
             label="User Name"
@@ -58,6 +99,7 @@ export default function Login() {
             fullWidth
             value={username}
             onChange={handleUsernameChange}
+            disabled={isLogging}
           />
 
           <InputTextField
@@ -68,10 +110,25 @@ export default function Login() {
             fullWidth
             value={password}
             onChange={handlePasswordChange}
+            disabled={isLogging}
           />
 
-          <Button type="submit" variant="contained" size="large" fullWidth>
-            Login
+          <Button
+            type="submit"
+            variant="contained"
+            size="large"
+            fullWidth
+            disabled={isLogging}
+            sx={{ minHeight: 48 }}
+          >
+            {isLogging ? (
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <CircularProgress size={20} color="inherit" />
+                Logging in...
+              </Box>
+            ) : (
+              "Login"
+            )}
           </Button>
         </Box>
       </Paper>

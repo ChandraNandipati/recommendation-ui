@@ -11,6 +11,7 @@ interface InputTextFieldProps {
   onChange: (event: ChangeEvent<HTMLInputElement>) => void;
   error?: boolean;
   helperText?: string;
+  disabled?: boolean;
 }
 
 export default function InputTextField({
@@ -23,6 +24,7 @@ export default function InputTextField({
   onChange,
   error,
   helperText,
+  disabled,
 }: InputTextFieldProps) {
   return (
     <TextField
@@ -35,6 +37,7 @@ export default function InputTextField({
       onChange={onChange}
       error={error}
       helperText={helperText}
+      disabled={disabled}
     />
   );
 }
