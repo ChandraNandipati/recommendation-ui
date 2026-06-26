@@ -31,6 +31,7 @@ export default function Login() {
       setErrorMessage("");
       const response = await fetch(LOGIN_API_URL, {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
           "testHeader":"Sneah"
